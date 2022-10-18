@@ -543,7 +543,8 @@ LEFT JOIN (
 USING (dates)
 WHERE b.total > 2
 
-2===========Write an SQL query to report the students (student_id, student_name) being “quiet” in ALL exams. A “quite” student is the one who took at least one exam and didn’t score neither the high score nor the low score.===========
+2===========Write an SQL query to report the students (student_id, student_name) being “quiet” in ALL exams. 
+A “quite” student is the one who took at least one exam and didn’t score neither the high score nor the low score.===========
 
 -- A "quite" student is the one who took at least one exam and didn't score
 neither the high score nor the low score.
