@@ -1,0 +1,660 @@
+# Write an SQL query to find all numbers that appear at least three times consecutively.
+-- Write a SQL query to find all numbers that appear at least three times consecutively.
+
+-- +----+-----+
+-- | Id | Num |
+-- +----+-----+
+-- | 1  |  1  |
+-- | 2  |  1  |
+-- | 3  |  1  |
+-- | 4  |  2  |
+-- | 5  |  1  |
+-- | 6  |  2  |
+-- | 7  |  2  |
+-- +----+-----+
+-- For example, given the above Logs table, 1 is the only number 
+that appears consecutively for at least three times.
+
+-- +-----------------+
+-- | ConsecutiveNums |
+-- +-----------------+
+-- | 1               |
+-- +-----------------+
+
+SELECT DISTINCT a.num AS ConsecutiveNums
+FROM(
+      SELECT num,
+      LAG(num) OVER() as prev,
+      LEAD(num) OVER() as next
+      FROM logs) AS a
+WHERE a.num = a.prev AND a.num = a.next
+
+
+9. Write a query to find the shortest distance between these points rounded to 2 decimals.
+-- Write a query to find the shortest distance between these points rounded to 2 decimals.
+ 
+
+-- | x  | y  |
+-- |----|----|
+-- | -1 | -1 |
+-- | 0  | 0  |
+-- | -1 | -2 |
+ 
+
+-- The shortest distance is 1.00 from point (-1,-1) to (-1,2). So the output should be:
+ 
+
+-- | shortest |
+-- |----------|
+-- | 1.00     |
+ 
+
+-- Note: The longest distance among all the points are less than 10000.
+
+SELECT ROUND(a.shortest,2) as shortest
+FROM (
+        SELECT SQRT(POW((p1.x-p2.x),2)+POW((p1.y-p2.y),2)) as shortest
+        FROM point_2d AS p1
+        CROSS JOIN point_2d AS p2
+        WHERE p1.x!=p2.x OR p1.y!=p2.y
+        ORDER BY SQRT(POW((p1.x-p2.x),2)+POW((p1.y-p2.y),2))
+        LIMIT 1) AS a
+        
+ 8. Write an SQL query to compute moving average of how much customer paid in a 7 days window (current day + 6 days before) .
+ -- You are the restaurant owner and you want to analyze a possible expansion
+(there will be at least one customer every day).
+
+-- Write an SQL query to compute moving average of how much customer
+paid in a 7 days window (current day + 6 days before) .
+
+-- The query result format is in the following example:
+
+-- Return result table ordered by visited_on.
+
+-- average_amount should be rounded to 2 decimal places, 
+all dates are in the format ('YYYY-MM-DD').
+
+-- Customer table:
+-- +-------------+--------------+--------------+-------------+
+-- | customer_id | name         | visited_on   | amount      |
+-- +-------------+--------------+--------------+-------------+
+-- | 1           | Jhon         | 2019-01-01   | 100         |
+-- | 2           | Daniel       | 2019-01-02   | 110         |
+-- | 3           | Jade         | 2019-01-03   | 120         |
+-- | 4           | Khaled       | 2019-01-04   | 130         |
+-- | 5           | Winston      | 2019-01-05   | 110         | 
+-- | 6           | Elvis        | 2019-01-06   | 140         | 
+-- | 7           | Anna         | 2019-01-07   | 150         |
+-- | 8           | Maria        | 2019-01-08   | 80          |
+-- | 9           | Jaze         | 2019-01-09   | 110         | 
+-- | 1           | Jhon         | 2019-01-10   | 130         | 
+-- | 3           | Jade         | 2019-01-10   | 150         | 
+-- +-------------+--------------+--------------+-------------+
+
+-- Result table:
+-- +--------------+--------------+----------------+
+-- | visited_on   | amount       | average_amount |
+-- +--------------+--------------+----------------+
+-- | 2019-01-07   | 860          | 122.86         |
+-- | 2019-01-08   | 840          | 120            |
+-- | 2019-01-09   | 840          | 120            |
+-- | 2019-01-10   | 1000         | 142.86         |
+-- +--------------+--------------+----------------+
+
+-- 1st moving average from 2019-01-01 to 2019-01-07 has an average_amount of 
+(100 + 110 + 120 + 130 + 110 + 140 + 150)/7 = 122.86
+-- 2nd moving average from 2019-01-02 to 2019-01-08 has an average_amount of
+(110 + 120 + 130 + 110 + 140 + 150 + 80)/7 = 120
+-- 3rd moving average from 2019-01-03 to 2019-01-09 has an average_amount of
+(120 + 130 + 110 + 140 + 150 + 80 + 110)/7 = 120
+-- 4th moving average from 2019-01-04 to 2019-01-10 has an average_amount of
+(130 + 110 + 140 + 150 + 80 + 110 + 130 + 150)/7 = 142.86
+SELECT visited_on, 
+       SUM(amount) OVER(ORDER BY visited_on ROWS 6 PRECEDING),
+       ROUND(AVG(amount) OVER(ORDER BY ORDER BY visited_on ROWS 6 PRECEDING),2)
+FROM (
+        SELECT visited_on, SUM(amount) AS amount
+        FROM customer
+        GROUP BY 1
+        ORDER BY 1
+     ) AS a
+ORDER BY visited_on OFFSET 6 ROWS
+
+7. Write an SQL query to find employees who earn the top three salaries in each of the department. 
+For the above tables, your SQL query should return the following rows (order of rows does not matter).
+-- The Employee table holds all employees. Every employee has an Id, and 
+there is also a column for the department Id.
+
+-- +----+-------+--------+--------------+
+-- | Id | Name  | Salary | DepartmentId |
+-- +----+-------+--------+--------------+
+-- | 1  | Joe   | 85000  | 1            |
+-- | 2  | Henry | 80000  | 2            |
+-- | 3  | Sam   | 60000  | 2            |
+-- | 4  | Max   | 90000  | 1            |
+-- | 5  | Janet | 69000  | 1            |
+-- | 6  | Randy | 85000  | 1            |
+-- | 7  | Will  | 70000  | 1            |
+-- +----+-------+--------+--------------+
+-- The Department table holds all departments of the company.
+
+-- +----+----------+
+-- | Id | Name     |
+-- +----+----------+
+-- | 1  | IT       |
+-- | 2  | Sales    |
+-- +----+----------+
+-- Write a SQL query to find employees who earn the top three salaries in 
+each of the department. For the above tables, your SQL query should
+return the following rows (order of rows does not matter).
+
+-- +------------+----------+--------+
+-- | Department | Employee | Salary |
+-- +------------+----------+--------+
+-- | IT         | Max      | 90000  |
+-- | IT         | Randy    | 85000  |
+-- | IT         | Joe      | 85000  |
+-- | IT         | Will     | 70000  |
+-- | Sales      | Henry    | 80000  |
+-- | Sales      | Sam      | 60000  |
+-- +------------+----------+--------+
+-- Explanation:
+
+-- In IT department, Max earns the highest salary, both Randy and Joe earn the 
+second highest salary, 
+-- and Will earns the third highest salary. 
+-- There are only two employees in the Sales department, 
+-- Henry earns the highest salary while Sam earns the second highest salary.-- The Employee table holds all employees. Every employee has an Id, and 
+there is also a column for the department Id.
+
+-- +----+-------+--------+--------------+
+-- | Id | Name  | Salary | DepartmentId |
+-- +----+-------+--------+--------------+
+-- | 1  | Joe   | 85000  | 1            |
+-- | 2  | Henry | 80000  | 2            |
+-- | 3  | Sam   | 60000  | 2            |
+-- | 4  | Max   | 90000  | 1            |
+-- | 5  | Janet | 69000  | 1            |
+-- | 6  | Randy | 85000  | 1            |
+-- | 7  | Will  | 70000  | 1            |
+-- +----+-------+--------+--------------+
+-- The Department table holds all departments of the company.
+
+-- +----+----------+
+-- | Id | Name     |
+-- +----+----------+
+-- | 1  | IT       |
+-- | 2  | Sales    |
+-- +----+----------+
+-- Write a SQL query to find employees who earn the top three salaries in 
+each of the department. For the above tables, your SQL query should
+return the following rows (order of rows does not matter).
+
+-- +------------+----------+--------+
+-- | Department | Employee | Salary |
+-- +------------+----------+--------+
+-- | IT         | Max      | 90000  |
+-- | IT         | Randy    | 85000  |
+-- | IT         | Joe      | 85000  |
+-- | IT         | Will     | 70000  |
+-- | Sales      | Henry    | 80000  |
+-- | Sales      | Sam      | 60000  |
+-- +------------+----------+--------+
+-- Explanation:
+
+-- In IT department, Max earns the highest salary, both Randy and Joe earn the 
+second highest salary, 
+-- and Will earns the third highest salary. 
+-- There are only two employees in the Sales department, 
+-- Henry earns the highest salary while Sam earns the second highest salary.
+SELECT a.department,
+       a.employee,
+       a.salary
+FROM (
+       SELECT d.name as department,
+              e.name as employee,
+              salary, 
+              DENSE_RANK() OVER(PARTITION BY d.name ORDER BY salary DESC) AS rk
+         FROM Employee e JOIN Department d
+           ON e.departmentid = d.id
+     ) AS a
+WHERE a.rk < 4
+
+6. Write an SQL query to report how many units in each category have been ordered on each day of the week.
+-- You are the business owner and would like to obtain a sales report
+for category items and day of the week.
+
+-- Write an SQL query to report how many units in each category 
+have been ordered on each day of the week.
+
+-- Return the result table ordered by category.
+
+-- The query result format is in the following example:
+
+-- Orders table:
+-- +------------+--------------+-------------+--------------+-------------+
+-- | order_id   | customer_id  | order_date  | item_id      | quantity    |
+-- +------------+--------------+-------------+--------------+-------------+
+-- | 1          | 1            | 2020-06-01  | 1            | 10          |
+-- | 2          | 1            | 2020-06-08  | 2            | 10          |
+-- | 3          | 2            | 2020-06-02  | 1            | 5           |
+-- | 4          | 3            | 2020-06-03  | 3            | 5           |
+-- | 5          | 4            | 2020-06-04  | 4            | 1           |
+-- | 6          | 4            | 2020-06-05  | 5            | 5           |
+-- | 7          | 5            | 2020-06-05  | 1            | 10          |
+-- | 8          | 5            | 2020-06-14  | 4            | 5           |
+-- | 9          | 5            | 2020-06-21  | 3            | 5           |
+-- +------------+--------------+-------------+--------------+-------------+
+
+-- Items table:
+-- +------------+----------------+---------------+
+-- | item_id    | item_name      | item_category |
+-- +------------+----------------+---------------+
+-- | 1          | LC Alg. Book   | Book          |
+-- | 2          | LC DB. Book    | Book          |
+-- | 3          | LC SmarthPhone | Phone         |
+-- | 4          | LC Phone 2020  | Phone         |
+-- | 5          | LC SmartGlass  | Glasses       |
+-- | 6          | LC T-Shirt XL  | T-Shirt       |
+-- +------------+----------------+---------------+
+
+-- Result table:
+-- +------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+-- | Category   | Monday    | Tuesday   | Wednesday | Thursday  | Friday    | Saturday  | Sunday    |
+-- +------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+-- | Book       | 20        | 5         | 0         | 0         | 10        | 0         | 0         |
+-- | Glasses    | 0         | 0         | 0         | 0         | 5         | 0         | 0         |
+-- | Phone      | 0         | 0         | 5         | 1         | 0         | 0         | 10        |
+-- | T-Shirt    | 0         | 0         | 0         | 0         | 0         | 0         | 0         |
+-- +------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+-- On Monday (2020-06-01, 2020-06-08) were sold a total of 20 units (10 + 10)
+in the category Book (ids: 1, 2).
+-- On Tuesday (2020-06-02) were sold a total of 5 units  
+in the category Book (ids: 1, 2).
+-- On Wednesday (2020-06-03) were sold a total of 5 units 
+in the category Phone (ids: 3, 4).
+-- On Thursday (2020-06-04) were sold a total of 1 unit 
+in the category Phone (ids: 3, 4).
+-- On Friday (2020-06-05) were sold 10 units in the category 
+Book (ids: 1, 2) and 5 units in Glasses (ids: 5).
+-- On Saturday there are no items sold.
+-- On Sunday (2020-06-14, 2020-06-21) were sold a total of 
+10 units (5 +5) in the category Phone (ids: 3, 4).
+-- There are no sales of T-Shirt.
+WITH t1 AS(
+           SELECT DISTINCT item_category,
+                  CASE WHEN extract(dow from order_date) = 1 THEN SUM(quantity) OVER main_window 
+		  ELSE 0 END AS Monday,
+                  CASE WHEN extract(dow from order_date) = 2 THEN SUM(quantity) OVER main_window
+		  ELSE 0 END AS Tuesday,
+                  CASE WHEN extract(dow from order_date) = 3 THEN SUM(quantity) OVER main_window
+		  ELSE 0 END AS Wednesday,
+                  CASE WHEN extract(dow from order_date) = 4 THEN SUM(quantity) OVER main_window
+		  ELSE 0 END AS Thursday,
+                  CASE WHEN extract(dow from order_date) = 5 THEN SUM(quantity) OVER main_window
+		  ELSE 0 END AS Friday,
+                  CASE WHEN extract(dow from order_date) = 6 THEN SUM(quantity) OVER main_window
+		  ELSE 0 END AS Saturday,
+                  CASE WHEN extract(dow from order_date) = 7 THEN SUM(quantity) OVER main_window
+		  ELSE 0 END AS Sunday
+             FROM orders o
+             RIGHT JOIN items
+             USING (item_id)
+	   WINDOW main_window AS (PARTITION BY item_category, TO_CHAR(order_date, 'Day'))
+          )
+
+SELECT item_category AS category,
+       SUM(Monday) AS Monday,
+       SUM(Tuesday) AS Tuesday,
+       SUM(Wednesday) AS Wednesday, 
+       SUM(Thursday) AS Thursday, 
+       SUM(Friday) AS Friday, 
+       SUM(Saturday) AS Saturday, 
+       SUM(Sunday) AS Sunday
+  FROM t1
+  GROUP BY item_category
+  
+  
+  5. Write an SQL query to generate a report of period_state for each continuous interval of days in the period from 2019–01–01 to 2019–12–31.
+  -- A system is running one task every day. Every task is independent of the previous tasks. 
+The tasks can fail or succeed.
+
+-- Write an SQL query to generate a report of period_state for each continuous interval of
+days in the period from 2019-01-01 to 2019-12-31.
+
+-- period_state is 'failed' if tasks in this interval failed or 'succeeded' if tasks 
+in this interval succeeded. Interval of days are retrieved as start_date and end_date.
+
+-- Order result by start_date.
+
+-- The query result format is in the following example:
+
+-- Failed table:
+-- +-------------------+
+-- | fail_date         |
+-- +-------------------+
+-- | 2018-12-28        |
+-- | 2018-12-29        |
+-- | 2019-01-04        |
+-- | 2019-01-05        |
+-- +-------------------+
+
+-- Succeeded table:
+-- +-------------------+
+-- | success_date      |
+-- +-------------------+
+-- | 2018-12-30        |
+-- | 2018-12-31        |
+-- | 2019-01-01        |
+-- | 2019-01-02        |
+-- | 2019-01-03        |
+-- | 2019-01-06        |
+-- +-------------------+
+
+
+-- Result table:
+-- +--------------+--------------+--------------+
+-- | period_state | start_date   | end_date     |
+-- +--------------+--------------+--------------+
+-- | succeeded    | 2019-01-01   | 2019-01-03   |
+-- | failed       | 2019-01-04   | 2019-01-05   |
+-- | succeeded    | 2019-01-06   | 2019-01-06   |
+-- +--------------+--------------+--------------+
+
+-- The report ignored the system state in 2018 as we care about the system in the
+period 2019-01-01 to 2019-12-31.
+-- From 2019-01-01 to 2019-01-03 all tasks succeeded and the system state was "succeeded".
+-- From 2019-01-04 to 2019-01-05 all tasks failed and system state was "failed".
+-- From 2019-01-06 to 2019-01-06 all tasks succeeded and system state was "succeeded".
+WITH t1 AS(
+            SELECT MIN(success_date) AS start_date,
+                   MAX(success_date) AS end_date,
+                   state
+            FROM(
+                  SELECT success_date, 
+                         DATE_SUB(success_date, INTERVAL ROW_NUMBER() OVER(ORDER BY success_date) DAY) AS diff, 
+                         1 AS state
+                  FROM succeeded
+                  WHERE success_date BETWEEN "2019-01-01" AND "2019-12-31") AS a
+            GROUP BY diff),
+
+    t2 AS(
+            SELECT MIN(fail_date) AS start_date, 
+                   MAX(fail_date) AS end_date, 
+                   state
+            FROM(
+                  SELECT fail_date,
+                         DATE_SUB(fail_date, INTERVAL ROW_NUMBER() OVER(ORDER BY success_date) DAY) as diff,
+                         0 as state
+                  FROM failed
+                  WHERE fail_date BETWEEN "2019-01-01" AND "2019-12-31") AS b
+            GROUP BY diff)
+
+SELECT CASE WHEN c.state = 1 THEN "succeeded"
+        ELSE "failed"
+        END AS period_state, start_date, end_date
+  FROM (
+        SELECT *
+          FROM t1
+        UNION ALL
+        SELECT *
+          FROM t2) AS c
+  ORDER BY start_date
+  
+  4. Write an SQL query to find how many users visited the bank and didn’t do any transactions, how many visited the bank and did one transaction and so on.
+  -- Write an SQL query to find how many users visited the bank and didn't do any transactions, 
+how many visited the bank and did one transaction and so on.
+
+-- The query result format is in the following example:
+
+-- Visits table:
+-- +---------+------------+
+-- | user_id | visit_date |
+-- +---------+------------+
+-- | 1       | 2020-01-01 |
+-- | 2       | 2020-01-02 |
+-- | 12      | 2020-01-01 |
+-- | 19      | 2020-01-03 |
+-- | 1       | 2020-01-02 |
+-- | 2       | 2020-01-03 |
+-- | 1       | 2020-01-04 |
+-- | 7       | 2020-01-11 |
+-- | 9       | 2020-01-25 |
+-- | 8       | 2020-01-28 |
+-- +---------+------------+
+-- Transactions table:
+-- +---------+------------------+--------+
+-- | user_id | transaction_date | amount |
+-- +---------+------------------+--------+
+-- | 1       | 2020-01-02       | 120    |
+-- | 2       | 2020-01-03       | 22     |
+-- | 7       | 2020-01-11       | 232    |
+-- | 1       | 2020-01-04       | 7      |
+-- | 9       | 2020-01-25       | 33     |
+-- | 9       | 2020-01-25       | 66     |
+-- | 8       | 2020-01-28       | 1      |
+-- | 9       | 2020-01-25       | 99     |
+-- +---------+------------------+--------+
+-- Result table:
+-- +--------------------+--------------+
+-- | transactions_count | visits_count |
+-- +--------------------+--------------+
+-- | 0                  | 4            |
+-- | 1                  | 5            |
+-- | 2                  | 0            |
+-- | 3                  | 1            |
+-- +--------------------+--------------+
+-- * For transactions_count = 0, The visits (1, "2020-01-01"), (2, "2020-01-02"), 
+(12, "2020-01-01") and (19, "2020-01-03") did no transactions so visits_count = 4.
+-- * For transactions_count = 1, The visits (2, "2020-01-03"), (7, "2020-01-11"), 
+(8, "2020-01-28"), (1, "2020-01-02") and (1, "2020-01-04") did one transaction so visits_count = 5.
+-- * For transactions_count = 2, No customers visited the bank and 
+did two transactions so visits_count = 0.
+-- * For transactions_count = 3, The visit (9, "2020-01-25") 
+did three transactions so visits_count = 1.
+-- * For transactions_count >= 4, No customers visited the bank and
+did more than three transactions so we will stop at transactions_count = 3
+WITH RECURSIVE t1 AS(
+                    SELECT visit_date,
+                           COALESCE(num_visits,0) as num_visits,
+                           COALESCE(num_trans,0) as num_trans
+                    FROM ((
+                          SELECT visit_date, user_id, COUNT(*) as num_visits
+                          FROM visits
+                          GROUP BY 1, 2) AS a
+                         LEFT JOIN
+                          (
+                           SELECT transaction_date,
+                                 user_id,
+                                 count(*) as num_trans
+                            FROM transactions
+                          GROUP BY 1, 2) AS b
+                         ON a.visit_date = b.transaction_date and a.user_id = b.user_id)
+                      ),
+
+              t2 AS (
+                      SELECT MAX(num_trans) as trans
+                        FROM t1
+                      UNION ALL
+                      SELECT trans-1 
+                        FROM t2
+                      WHERE trans >= 1)
+
+SELECT trans as transactions_count, 
+       COALESCE(visits_count,0) as visits_count
+  FROM t2 LEFT JOIN (
+                    SELECT num_trans as transactions_count, COALESCE(COUNT(*),0) as visits_count
+                    FROM t1 
+                    GROUP BY 1
+                    ORDER BY 1) AS a
+ON a.transactions_count = t2.trans
+ORDER BY 1
+
+3. Write a query to display the records which have 3 or
+more consecutive rows and the amount of people more than 100(inclusive).
+-- X city built a new stadium, each day many people visit it and 
+the stats are saved as these columns: id, visit_date, people
+
+-- Please write a query to display the records which have 3 or 
+more consecutive rows and the amount of people more than 100(inclusive).
+
+-- For example, the table stadium:
+-- +------+------------+-----------+
+-- | id   | visit_date | people    |
+-- +------+------------+-----------+
+-- | 1    | 2017-01-01 | 10        |
+-- | 2    | 2017-01-02 | 109       |
+-- | 3    | 2017-01-03 | 150       |
+-- | 4    | 2017-01-04 | 99        |
+-- | 5    | 2017-01-05 | 145       |
+-- | 6    | 2017-01-06 | 1455      |
+-- | 7    | 2017-01-07 | 199       |
+-- | 8    | 2017-01-08 | 188       |
+-- +------+------------+-----------+
+-- For the sample data above, the output is:
+
+-- +------+------------+-----------+
+-- | id   | visit_date | people    |
+-- +------+------------+-----------+
+-- | 5    | 2017-01-05 | 145       |
+-- | 6    | 2017-01-06 | 1455      |
+-- | 7    | 2017-01-07 | 199       |
+-- | 8    | 2017-01-08 | 188       |
+-- +------+------------+-----------+
+-- Note:
+-- Each day only have one row record, and the dates are increasing with id increasing.
+WITH t1 AS (
+            SELECT id, 
+                   visit_date,
+                   people,
+                   id - ROW_NUMBER() OVER(ORDER BY visit_date) AS dates
+              FROM stadium
+            WHERE people >= 100) 
+            
+SELECT t1.id, 
+       t1.visit_date,
+       t1people
+FROM t1
+LEFT JOIN (
+            SELECT dates, 
+                   COUNT(*) as total
+              FROM t1
+            GROUP BY dates) AS b
+USING (dates)
+WHERE b.total > 2
+
+2===========Write an SQL query to report the students (student_id, student_name) being “quiet” in ALL exams. A “quite” student is the one who took at least one exam and didn’t score neither the high score nor the low score.===========
+
+-- A "quite" student is the one who took at least one exam and didn't score
+neither the high score nor the low score.
+
+-- Write an SQL query to report the students (student_id, student_name) 
+being "quiet" in ALL exams.
+
+-- Don't return the student who has never taken any exam. Return the result 
+table ordered by student_id.
+
+-- The query result format is in the following example.
+
+-- Student table:
+-- +-------------+---------------+
+-- | student_id  | student_name  |
+-- +-------------+---------------+
+-- | 1           | Daniel        |
+-- | 2           | Jade          |
+-- | 3           | Stella        |
+-- | 4           | Jonathan      |
+-- | 5           | Will          |
+-- +-------------+---------------+
+
+-- Exam table:
+-- +------------+--------------+-----------+
+-- | exam_id    | student_id   | score     |
+-- +------------+--------------+-----------+
+-- | 10         |     1        |    70     |
+-- | 10         |     2        |    80     |
+-- | 10         |     3        |    90     |
+-- | 20         |     1        |    80     |
+-- | 30         |     1        |    70     |
+-- | 30         |     3        |    80     |
+-- | 30         |     4        |    90     |
+-- | 40         |     1        |    60     |
+-- | 40         |     2        |    70     |
+-- | 40         |     4        |    80     |
+-- +------------+--------------+-----------+
+
+-- Result table:
+-- +-------------+---------------+
+-- | student_id  | student_name  |
+-- +-------------+---------------+
+-- | 2           | Jade          |
+-- +-------------+---------------+
+
+WITH t1 AS (
+              SELECT student_id
+                FROM (
+                       SELECT *,
+                              MIN(score) OVER main_window as least,
+                              MAX(score) OVER main_window as most
+                         FROM exam
+                       WINDOW main_window AS (PARTITION BY exam_id)
+                     ) as a
+              where least = score or most = score
+            )
+
+SELECT DISTINCT student_id, 
+                student_name
+FROM exam JOIN student
+USING (student_id)
+WHERE student_id != ALL(SELECT student_id FROM t1)
+ORDER BY 1
+
+1. Given two tables below, write a query to display the comparison result (higher/lower/same) of the average salary of employees in a department to the company’s average salary.
+
+-- Table: salary
+-- | id | employee_id | amount | pay_date   |
+-- |----|-------------|--------|------------|
+-- | 1  | 1           | 9000   | 2017-03-31 |
+-- | 2  | 2           | 6000   | 2017-03-31 |
+-- | 3  | 3           | 10000  | 2017-03-31 |
+-- | 4  | 1           | 7000   | 2017-02-28 |
+-- | 5  | 2           | 6000   | 2017-02-28 |
+-- | 6  | 3           | 8000   | 2017-02-28 |
+ 
+
+-- The employee_id column refers to the employee_id in the following table employee.
+ 
+
+-- | employee_id | department_id |
+-- |-------------|---------------|
+-- | 1           | 1             |
+-- | 2           | 2             |
+-- | 3           | 2             |
+ 
+
+-- So for the sample data above, the result is:
+ 
+
+-- | pay_month | department_id | comparison  |
+-- |-----------|---------------|-------------|
+-- | 2017-03   | 1             | higher      |
+-- | 2017-03   | 2             | lower       |
+-- | 2017-02   | 1             | same        |
+-- | 2017-02   | 2             | same        |
+
+WITH t1 AS
+(
+	SELECT TO_CHAR(pay_date,'YYYY-MM') as pay_month, department_id, 
+	AVG(amount) OVER(PARTITION BY DATE_PART('month',pay_date),department_id) as dept_avg, 
+	AVG(amount) OVER(PARTITION BY DATE_PART('month',pay_date)) as comp_avg
+	FROM salary as s JOIN employee as e
+	USING (employee_id)
+)
+
+SELECT DISTINCT pay_month, department_id, 
+       CASE WHEN dept_avg > comp_avg THEN 'higher'
+       WHEN dept_avg = comp_avg THEN 'same'
+ELSE 'lower'
+END AS comparison
+FROM t1
+ORDER BY 1 DESC
